@@ -297,6 +297,7 @@ export default function StudentManagementClient({ user }: { user: any }) {
           </div>
 
           <nav className="flex-1 px-4 py-6 space-y-2">
+            {/* Dashboard Link */}
             <Link
               href="/dashboard"
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -310,7 +311,7 @@ export default function StudentManagementClient({ user }: { user: any }) {
               </svg>
               Dashboard
             </Link>
-
+            {/* Students Link */}
             <Link
               href="/"
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -324,8 +325,21 @@ export default function StudentManagementClient({ user }: { user: any }) {
               </svg>
               Students
             </Link>
+            {/* Timetable Link */}
+            <Link
+              href="/timetable"
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                pathname === '/timetable'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Timetable
+            </Link>
           </nav>
-
           {/* User Profile in Sidebar */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between">
