@@ -33,6 +33,13 @@ interface Student {
   name: string;
 }
 
+interface UserSession {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+}
+
 // Static Assessments List
 const ASSESSMENTS: Assessment[] = [
   { id: '1', title: 'Midterm Exam', type: 'Exam', maxScore: 100, date: '2023-10-15', course: 'Web Development' },
@@ -50,9 +57,10 @@ const ASSESSMENTS: Assessment[] = [
 export default function GradesPage() {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [filter, setFilter] = useState<'All' | AssessmentType>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   // State for Data
   const [students, setStudents] = useState<Student[]>([]);
@@ -66,40 +74,87 @@ export default function GradesPage() {
     score: '',
   });
 
-  // Fetch Students and Grades on Load
+  // Fetch user session and data on load
   useEffect(() => {
-    fetchGradesAndStudents();
+    fetchUserSession();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchGradesAndStudents();
+    }
+  }, [user]);
+
+  const fetchUserSession = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          console.log('👤 Logged in user:', data.user);
+          setUser(data.user);
+          setIsAdmin(data.user.role === 'admin');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user session:', error);
+    }
+  };
 
   const fetchGradesAndStudents = async () => {
     try {
+      setLoading(true);
+      console.log('🔄 Fetching grades and students...');
+      
       const [studentsRes, gradesRes] = await Promise.all([
         fetch('/api/students'),
         fetch('/api/grades')
       ]);
       
+      console.log('📥 Students response status:', studentsRes.status);
+      console.log('📥 Grades response status:', gradesRes.status);
+      
       if (studentsRes.ok) {
         const studentsData = await studentsRes.json();
         setStudents(studentsData);
+        console.log('📚 Fetched students:', studentsData.length);
+      } else {
+        console.error('Failed to fetch students:', await studentsRes.text());
       }
       
       if (gradesRes.ok) {
         const gradesData = await gradesRes.json();
+        console.log('📊 All grades from API:', gradesData.length);
+        console.log('👤 Current user:', user);
+        
+        // ✅ Set ALL grades for everyone (admin and students)
         setGrades(gradesData);
+      } else {
+        const errorText = await gradesRes.text();
+        console.error('❌ Failed to fetch grades:', gradesRes.status, errorText);
+        setGrades([]);
       }
     } catch (error) {
-      console.error("Failed to fetch data", error);
+      console.error("❌ Failed to fetch data", error);
+      setGrades([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Apply filter to grades
   const filteredGrades = filter === 'All' 
     ? grades 
     : grades.filter(g => g.assessmentType === filter);
 
   const handleAddGrade = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 🔒 Only admins can add grades
+    if (!isAdmin) {
+      alert('Only administrators can add grades.');
+      return;
+    }
     
     if (!newGrade.assessmentId || !newGrade.studentId || !newGrade.score) {
       alert('Please fill in all fields');
@@ -142,7 +197,6 @@ export default function GradesPage() {
         throw new Error(errorData.error || 'Failed to save grade');
       }
 
-      // Refetch all grades to ensure we have the latest data
       await fetchGradesAndStudents();
       
       setIsModalOpen(false);
@@ -155,12 +209,18 @@ export default function GradesPage() {
   };
 
   const handleDeleteGrade = async (gradeId: string) => {
+    // 🔒 Only admins can delete grades
+    if (!isAdmin) {
+      alert('Only administrators can delete grades.');
+      return;
+    }
+    
     if (!confirm('Are you sure you want to delete this grade record? This action cannot be undone.')) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/grades/${gradeId}`, {
+      const res = await fetch(`/api/grades?id=${gradeId}`, {
         method: 'DELETE',
       });
 
@@ -169,10 +229,8 @@ export default function GradesPage() {
         throw new Error(errorData.error || 'Failed to delete grade');
       }
 
-      // Refetch grades to update the display
       await fetchGradesAndStudents();
       
-      setDeleteConfirmId(null);
       alert('Grade deleted successfully!');
     } catch (err) {
       alert('Error deleting grade: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -198,16 +256,31 @@ export default function GradesPage() {
     return 'F';
   };
 
-  if (loading) return <div className="p-8 text-center">Loading grades...</div>;
+  // Calculate stats based on filtered grades
+  const getStatsForFilteredGrades = () => {
+    if (filteredGrades.length === 0) {
+      return { total: 0, studentsGraded: 0, average: '-' };
+    }
+    
+    const total = filteredGrades.length;
+    const studentsGraded = new Set(filteredGrades.map(g => g.studentId)).size;
+    const average = filteredGrades.length > 0 
+      ? ((filteredGrades.reduce((sum, g) => sum + (g.score / g.maxScore) * 100, 0) / filteredGrades.length)).toFixed(1) + '%'
+      : '-';
+    
+    return { total, studentsGraded, average };
+  };
+
+  const stats = getStatsForFilteredGrades();
+
+  if (loading && !user) return <div className="p-8 text-center">Loading...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex flex-col h-full">
           <div className="h-16 flex items-center px-6 border-b border-gray-200">
@@ -231,11 +304,24 @@ export default function GradesPage() {
               Grades
             </Link>
           </nav>
+          
+          {user && (
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                  {user.name?.charAt(0) || 'U'}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100">
@@ -243,13 +329,19 @@ export default function GradesPage() {
             </button>
             <h1 className="text-xl font-bold text-gray-800">Grade & Assessment Management</h1>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Enter Grade
-          </button>
+          
+          <div className="flex items-center gap-3">
+            {/* Enter Grade Button - Only for Admins */}
+            {isAdmin && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Enter Grade
+              </button>
+            )}
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
@@ -274,19 +366,15 @@ export default function GradesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <p className="text-sm text-gray-500">Total Grades</p>
-              <p className="text-2xl font-bold text-gray-900">{grades.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <p className="text-sm text-gray-500">Students Graded</p>
-              <p className="text-2xl font-bold text-gray-900">{new Set(grades.map(g => g.studentId)).size}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.studentsGraded}</p>
             </div>
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
               <p className="text-sm text-gray-500">Overall Average</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {grades.length > 0 
-                  ? ((grades.reduce((sum, g) => sum + (g.score / g.maxScore) * 100, 0) / grades.length)).toFixed(1) + '%'
-                  : '-'}
-              </p>
+              <p className="text-2xl font-bold text-blue-600">{stats.average}</p>
             </div>
           </div>
 
@@ -296,9 +384,13 @@ export default function GradesPage() {
               <div className="text-5xl mb-4">📊</div>
               <h3 className="text-lg font-medium text-gray-700">No grades found</h3>
               <p className="text-gray-500 mt-2">
-                {filter === 'All' ? 'Start by entering grades for your students.' : `No ${filter.toLowerCase()} grades found.`}
+                {filter === 'All' 
+                  ? isAdmin 
+                    ? 'Start by entering grades for your students.' 
+                    : 'No grades have been recorded yet.'
+                  : `No ${filter.toLowerCase()} grades found.`}
               </p>
-              {filter === 'All' && (
+              {filter === 'All' && isAdmin && (
                 <button 
                   onClick={() => setIsModalOpen(true)}
                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -319,18 +411,23 @@ export default function GradesPage() {
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(grade.assessmentType)}`}>
                         {grade.assessmentType}
                       </span>
-                      <button
-                        onClick={() => handleDeleteGrade(grade._id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete grade"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      {/* Delete Button - Only for Admins */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteGrade(grade._id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title="Delete grade"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     <h3 className="text-lg font-bold text-gray-900">{grade.assessmentTitle}</h3>
+                    {/* Show student name for everyone now */}
                     <p className="text-sm text-gray-600 font-medium mt-1">{grade.studentName}</p>
+                    <p className="text-xs text-gray-500 mt-1">{grade.assessmentTitle}</p>
                   </div>
                   
                   <div className="p-4 bg-gray-50">
@@ -374,8 +471,8 @@ export default function GradesPage() {
         </main>
       </div>
 
-      {/* Enter Grade Modal */}
-      {isModalOpen && (
+      {/* Enter Grade Modal - Only for Admins */}
+      {isAdmin && isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">

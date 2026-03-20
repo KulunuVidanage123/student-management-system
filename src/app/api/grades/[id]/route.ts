@@ -3,12 +3,24 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Grade from '@/models/Grade';
 import mongoose from 'mongoose';
+import { getSession } from '@/lib/auth';
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized: Please log in' }, { status: 401 });
+    }
+    
+    if (session.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    // Await the dynamic route params (Next.js 15+)
     const { id } = await params;
     
     // Validate ObjectId format
@@ -24,12 +36,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Grade not found' }, { status: 404 });
     }
     
+    console.log(`✅ Grade deleted: ${id} by admin ${session.id} (${session.email})`);
+    
     return NextResponse.json({ 
       message: 'Grade deleted successfully',
       deletedId: id 
     }, { status: 200 });
   } catch (error: any) {
-    console.error('Error deleting grade:', error);
+    console.error('❌ Error deleting grade:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

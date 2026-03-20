@@ -26,8 +26,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Create JWT Token - 🔧 CONVERT ObjectId to string
     const token = await new SignJWT({ 
-      id: user._id, 
+      id: user._id.toString(),  // This is the critical fix
       email: user.email, 
       role: user.role,
       name: user.name 

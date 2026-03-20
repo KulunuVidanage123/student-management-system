@@ -31,7 +31,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       message: 'User registered successfully', 
-      user: { id: newUser._id, email: newUser.email, name: newUser.name, role: newUser.role } 
+      user: { 
+        id: newUser._id.toString(),  //Convert ObjectId to string
+        email: newUser.email, 
+        name: newUser.name, 
+        role: newUser.role 
+      } 
     }, { status: 201 });
 
   } catch (error: any) {
