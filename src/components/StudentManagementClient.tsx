@@ -1,3 +1,4 @@
+// src/components/StudentManagementClient.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -279,6 +280,7 @@ export default function StudentManagementClient({ user }: { user: any }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -286,74 +288,72 @@ export default function StudentManagementClient({ user }: { user: any }) {
         />
       )}
 
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
+      {/* Sidebar - FIXED: Proper flex layout with scrollable nav */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex flex-col h-full">
-          <div className="h-16 flex items-center px-6 border-b border-gray-200">
+          {/* Logo/Header - Fixed at top, doesn't shrink */}
+          <div className="h-16 flex items-center px-6 border-b border-gray-200 flex-shrink-0">
             <span className="text-xl font-bold text-blue-600">EduManage</span>
           </div>
 
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {/* Dashboard Link */}
-            <Link
-              href="/dashboard"
+          {/* Navigation - Scrollable when content overflows */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <Link 
+              href="/dashboard" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                pathname === '/dashboard'
-                  ? 'bg-blue-50 text-blue-700'
+                pathname === '/dashboard' 
+                  ? 'bg-blue-50 text-blue-700' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
               Dashboard
             </Link>
-            {/* Students Link */}
-            <Link
-              href="/"
+
+            <Link 
+              href="/" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                pathname === '/'
-                  ? 'bg-blue-50 text-blue-700'
+                pathname === '/' 
+                  ? 'bg-blue-50 text-blue-700' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               Students
             </Link>
-            {/* Timetable Link */}
-            <Link
-              href="/timetable"
+
+            <Link 
+              href="/timetable" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                pathname === '/timetable'
-                  ? 'bg-blue-50 text-blue-700'
+                pathname === '/timetable' 
+                  ? 'bg-blue-50 text-blue-700' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Timetable
             </Link>
-            {/* Grades Link */}
-            <Link
-              href="/grades"
+
+            <Link 
+              href="/grades" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                pathname === '/grades'
-                  ? 'bg-blue-50 text-blue-700'
+                pathname === '/grades' 
+                  ? 'bg-blue-50 text-blue-700' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               Grades
             </Link>
-            {/* Attendance Link */}
+
             <Link 
               href="/attendance" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -362,17 +362,17 @@ export default function StudentManagementClient({ user }: { user: any }) {
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
               Attendance
             </Link>
             <Link 
-              href="/feedback"  // Correct: Points to the UI page
+              href="/feedback" 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                 pathname === '/feedback' 
                   ? 'bg-blue-50 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-50'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,24 +380,40 @@ export default function StudentManagementClient({ user }: { user: any }) {
               </svg>
               Feedback
             </Link>
+            <Link 
+              href="/financial" 
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                pathname === '/financial' 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Financial
+            </Link>
           </nav>
 
-          {/* User Profile in Sidebar */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
+          {/* User Profile - Fixed at bottom, doesn't shrink */}
+          {user && (
+            <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                  {user?.name?.charAt(0) || 'U'}
+                  {user.name?.charAt(0) || 'U'}
                 </div>
-                <div className="overflow-hidden">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <button 
